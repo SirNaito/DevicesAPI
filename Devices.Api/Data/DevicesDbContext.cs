@@ -5,16 +5,16 @@ namespace Devices.Api.Data;
 
 public class DevicesDbContext : DbContext
 {
-    // Constructor for the DevicesDbContext class, which takes DbContextOptions as a parameter and passes it to the base DbContext class.
+    // Constructor for the DevicesDbContext class, which takes DbContextOptions as a parameter and passes it to the base DbContext class
     public DevicesDbContext(
         DbContextOptions<DevicesDbContext> options)
         : base(options)
     {
     }
-    // DbSet property for the Device entity, allowing CRUD operations on the Devices table in the database.
+    // DbSet property for the Device entity, allowing CRUD operations on the Devices table in the database
     public DbSet<Device> Devices => Set<Device>();
 
-    // Configures the model for the Device entity, specifying primary key, required properties, maximum lengths, and indexes.
+    // Configures the model for the Device entity, specifying primary key, required properties, maximum lengths, and indexes
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

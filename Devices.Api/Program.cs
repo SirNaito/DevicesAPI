@@ -1,12 +1,13 @@
 using System.Text.Json.Serialization;
 using Devices.Api.Data;
 using Devices.Api.Models;
+using Devices.Api.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -49,9 +50,11 @@ if (!string.IsNullOrWhiteSpace(databaseDirectory))
 builder.Services.AddDbContext<DevicesDbContext>(options =>
     options.UseSqlite(sqliteConnection.ToString()));
 
+builder.Services.AddScoped<IDeviceService, DeviceService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -163,6 +163,11 @@ AutoTest.Net/
 # Web workbench (sass)
 .sass-cache/
 
+# Local SQLite database
+/Devices.Api/App_Data/*.db
+/Devices.Api/App_Data/*.db-shm
+/Devices.Api/App_Data/*.db-wal
+
 # Installshield output folder
 [Ee]xpress/
 
