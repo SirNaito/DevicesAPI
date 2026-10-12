@@ -33,16 +33,44 @@ public sealed class DeviceService : IDeviceService
     }
 
     // Method to get all devices from the database using Async/Await pattern
+
     public async Task<IReadOnlyList<DeviceResponse>> GetAllAsync(
+        string? brand,
+        string? state,
         CancellationToken cancellationToken)
     {
-        var devices = await _dbContext.Devices
-            .AsNoTracking()
+        IQueryable<Device> query = _dbContext.Devices.AsNoTracking();
+
+        if (brand is not null)
+        {
+            if (string.IsNullOrWhiteSpace(brand))
+            {
+                throw new DeviceValidationException(
+                    "Brand filter cannot be empty.");
+            }
+
+            var normalizedBrand = brand.Trim();
+
+            query = query.Where(device =>
+                EF.Functions.Collate(device.Brand, "NOCASE")
+                == normalizedBrand);
+        }
+
+        var parsedState = ParseState(state);
+
+        if (parsedState is not null)
+        {
+            query = query.Where(device =>
+                device.State == parsedState.Value);
+        }
+
+        var devices = await query
             .OrderBy(device => device.Name)
             .ToListAsync(cancellationToken);
 
         return devices.Select(MapToResponse).ToList();
     }
+
 
     // Method to get a device by its ID from the database using Async/Await pattern
     public async Task<DeviceResponse?> GetByIdAsync(
@@ -170,6 +198,50 @@ public sealed class DeviceService : IDeviceService
                 "Name and brand cannot be changed while the device is in use.");
         }
     }
+
+    // Method to parse the state string into a DeviceState enum value, or return null if the state is not provided
+    private static DeviceState? ParseState(string? state)
+    {
+        if (state is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(state))
+        {
+            throw new DeviceValidationException(
+                "State filter cannot be empty.");
+        }
+
+        return state.Trim().ToLowerInvariant() switch
+        {
+            "available" => DeviceState.Available,
+            "in-use" => DeviceState.InUse,
+            "inactive" => DeviceState.Inactive,
+            _ => throw new DeviceValidationException(
+                "State must be available, in-use, or inactive.")
+        };
+    }
+
+    // Method to delete a device from the database using Async/Await pattern
+    public async Task DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var device = await FindTrackedDeviceAsync(
+            id, cancellationToken);
+
+        if (device.State == DeviceState.InUse)
+        {
+            throw new DeviceConflictException(
+                "Devices in use cannot be deleted.");
+        }
+
+        _dbContext.Devices.Remove(device);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
 
     // Method to map a Device entity to a DeviceResponse DTO
     private static DeviceResponse MapToResponse(Device device)

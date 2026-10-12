@@ -19,36 +19,41 @@ public sealed class DevicesController : ControllerBase
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     // Endpoint to create a new device
-    public async Task<ActionResult<DeviceResponse>> Create(
-        [FromBody] CreateDeviceRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<DeviceResponse>> Create([FromBody] CreateDeviceRequest request, CancellationToken cancellationToken)
     {
         var device = await _deviceService.CreateAsync(
-            request, cancellationToken);
+            request, 
+            cancellationToken);
 
-        return CreatedAtRoute(
-            "GetDeviceById",
-            new { id = device.Id },
-            device);
+        return CreatedAtRoute("GetDeviceById", new { id = device.Id }, device);
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<DeviceResponse>), StatusCodes.Status200OK)]
-    // Endpoint to get all devices
-    public async Task<ActionResult<IReadOnlyList<DeviceResponse>>> GetAll(
-        CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    // Endpoint to get all devices with optional filtering by brand and state
+    public async Task<ActionResult<IReadOnlyList<DeviceResponse>>> GetAll([FromQuery] string? brand, [FromQuery] string? state, CancellationToken cancellationToken)
     {
-        var devices = await _deviceService.GetAllAsync(cancellationToken);
-        return Ok(devices);
+        try
+        {
+            var devices = await _deviceService.GetAllAsync(
+                brand,
+                state,
+                cancellationToken);
+
+            return Ok(devices);
+        }
+        catch (DeviceValidationException ex)
+        {
+            return CreateProblem(400, "Invalid filter", ex.Message);
+        }
     }
 
     [HttpGet("{id:guid}", Name = "GetDeviceById")]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     // Endpoint to get a device by its ID
-    public async Task<ActionResult<DeviceResponse>> GetById(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<DeviceResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var device = await _deviceService.GetByIdAsync(
             id, cancellationToken);
@@ -67,10 +72,7 @@ public sealed class DevicesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     // Endpoint to update a device by its ID
-    public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateDeviceRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDeviceRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -99,15 +101,11 @@ public sealed class DevicesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     // Endpoint to partially update a device by its ID
-    public async Task<IActionResult> Patch(
-        Guid id,
-        [FromBody] PatchDeviceRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Patch(Guid id, [FromBody] PatchDeviceRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var device = await _deviceService.PatchAsync(
-                id, request, cancellationToken);
+            var device = await _deviceService.PatchAsync(id, request, cancellationToken);
 
             return Ok(device);
         }
@@ -122,6 +120,28 @@ public sealed class DevicesController : ControllerBase
         catch (DeviceValidationException ex)
         {
             return CreateProblem(400, "Invalid device update", ex.Message);
+        }
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deviceService.DeleteAsync(id, cancellationToken);
+
+            return NoContent();
+        }
+        catch (DeviceNotFoundException ex)
+        {
+            return CreateProblem(404, "Device not found", ex.Message);
+        }
+        catch (DeviceConflictException ex)
+        {
+            return CreateProblem(409, "Device conflict", ex.Message);
         }
     }
 

@@ -9,6 +9,8 @@ public interface IDeviceService
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<DeviceResponse>> GetAllAsync(
+        string? brand,
+        string? state,
         CancellationToken cancellationToken);
 
     Task<DeviceResponse?> GetByIdAsync(
@@ -23,5 +25,9 @@ public interface IDeviceService
     Task<DeviceResponse> PatchAsync(
         Guid id,
         PatchDeviceRequest request,
+        CancellationToken cancellationToken);
+
+    Task DeleteAsync(
+        Guid id,
         CancellationToken cancellationToken);
 }
