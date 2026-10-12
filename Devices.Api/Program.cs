@@ -54,7 +54,16 @@ builder.Services.AddScoped<IDeviceService, DeviceService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Ensure the database is created and apply any pending migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider
+        .GetRequiredService<DevicesDbContext>();
+
+    await dbContext.Database.MigrateAsync();
+}
+
+// If the application is running in development mode, enable Swagger for API documentation
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
