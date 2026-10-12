@@ -14,4 +14,14 @@ public interface IDeviceService
     Task<DeviceResponse?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken);
+
+    Task<DeviceResponse> UpdateAsync(
+        Guid id,
+        UpdateDeviceRequest request,
+        CancellationToken cancellationToken);
+
+    Task<DeviceResponse> PatchAsync(
+        Guid id,
+        PatchDeviceRequest request,
+        CancellationToken cancellationToken);
 }
