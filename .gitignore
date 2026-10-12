@@ -167,6 +167,12 @@ AutoTest.Net/
 /Devices.Api/App_Data/*.db
 /Devices.Api/App_Data/*.db-shm
 /Devices.Api/App_Data/*.db-wal
+/Devices.Api/App_Data/*.db-journal
+
+# Local environment files
+.env
+.env.*
+!.env.example
 
 # Installshield output folder
 [Ee]xpress/
