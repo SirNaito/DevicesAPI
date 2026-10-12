@@ -15,18 +15,32 @@ public sealed class DevicesController : ControllerBase
         _deviceService = deviceService;
     }
 
+
     [HttpPost]
     [ProducesResponseType(typeof(DeviceResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     // Endpoint to create a new device
     public async Task<ActionResult<DeviceResponse>> Create([FromBody] CreateDeviceRequest request, CancellationToken cancellationToken)
     {
-        var device = await _deviceService.CreateAsync(
-            request, 
-            cancellationToken);
+        try
+        {
+            var device = await _deviceService.CreateAsync(
+                request,
+                cancellationToken);
 
-        return CreatedAtRoute("GetDeviceById", new { id = device.Id }, device);
+            return CreatedAtRoute("GetDeviceById", new { id = device.Id },device);
+        }
+        catch (DeviceValidationException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Invalid device",
+                Detail = ex.Message
+            });
+        }
     }
+
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<DeviceResponse>), StatusCodes.Status200OK)]

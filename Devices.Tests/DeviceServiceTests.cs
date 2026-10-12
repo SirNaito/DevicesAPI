@@ -267,6 +267,20 @@ public sealed class DeviceServiceTests : IDisposable
         Assert.False(exists);
     }
 
+    // Test to ensure that CreateAsync throws a validation exception when the device name is whitespace
+    [Fact]
+    public async Task CreateAsync_WhenNameIsWhitespace_ThrowsValidationException()
+    {
+        await Assert.ThrowsAsync<DeviceValidationException>(
+            () => _service.CreateAsync(
+                new CreateDeviceRequest
+                {
+                    Name = "   ",
+                    Brand = "Samsung"
+                },
+                CancellationToken.None));
+    }
+
     // Helper method to add a device to the in-memory database for testing purposes
     private async Task<Device> AddDeviceAsync(
         string name,
